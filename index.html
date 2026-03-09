@@ -529,13 +529,18 @@
       
       // 更新按鈕狀態
       const btn = document.getElementById('ai-search-btn');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>`;
-      lucide.createIcons();
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>`;
+        lucide.createIcons();
+      }
 
       try {
-        const apiKey = "AIzaSyDtkX8lMD1iJoBALE7VUBkjmU7Yrcr2ujY"; // 請在此填入您的 Gemini API Key
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        // ⚠️ 請在此處填寫您的 API Key (必須保留前後的雙引號)
+        const apiKey = "AIzaSyDtkX8lMD1iJoBALE7VUBkjmU7Yrcr2ujY"; 
+        
+        // 💡 已經強制改為最穩定支援個人 Key 的 gemini-1.5-flash 模型
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
         const prompt = `使用者目前在日本東京的「${aiState.location}」，請推薦附近走路15分鐘內的：1. 正餐餐廳 (至多3個) 2. 下午茶咖啡館 (至多3個) 3. 其他景點 (至多3個)。請以 JSON 格式回傳，格式必須嚴格如下：
         {
@@ -554,7 +559,13 @@
         };
 
         const res = await fetch(url, options);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        
+        // 攔截並印出 Google 官方的真實錯誤訊息
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP 錯誤碼: ${res.status}`);
+        }
+        
         const data = await res.json();
         const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         
@@ -562,8 +573,9 @@
         aiState.results = JSON.parse(jsonText);
         
       } catch (err) {
-        aiState.error = '搜尋發生錯誤，請確認 API Key 或網路狀態後稍後再試。';
-        console.error(err);
+        // 將最真實的錯誤顯示在紅色框框中
+        aiState.error = '❌ 搜尋失敗：' + (err.message || '請確認 API Key 或網路狀態');
+        console.error("AI 搜尋詳細錯誤:", err);
       } finally {
         aiState.isSearching = false;
         if (activeTab === 'guide') renderContent(); // 重新渲染該頁面以顯示結果
