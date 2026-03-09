@@ -540,7 +540,7 @@
         const apiKey = "AIzaSyDtkX8lMD1iJoBALE7VUBkjmU7Yrcr2ujY"; 
         
         // 💡 已經強制改為最穩定支援個人 Key 的 gemini-1.5-flash 模型
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
         const prompt = `使用者目前在日本東京的「${aiState.location}」，請推薦附近走路15分鐘內的：1. 正餐餐廳 (至多3個) 2. 下午茶咖啡館 (至多3個) 3. 其他景點 (至多3個)。請以 JSON 格式回傳，格式必須嚴格如下：
         {
