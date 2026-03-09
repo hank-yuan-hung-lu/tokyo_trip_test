@@ -198,6 +198,24 @@
       }
     }
 
+    // --- 儲存 API Key 的邏輯 ---
+    function saveApiKey() {
+      const input = document.getElementById('api-key-setting');
+      const val = input.value.trim();
+      const msg = document.getElementById('api-key-msg');
+      
+      if (val) {
+        localStorage.setItem('gemini_api_key', val);
+        msg.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400">✅ 儲存成功！金鑰已安全保存在您的瀏覽器中。</span>';
+      } else {
+        localStorage.removeItem('gemini_api_key');
+        msg.innerHTML = '<span class="text-stone-500">已清除金鑰設定。</span>';
+      }
+      
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+
     // --- 導覽列渲染 ---
     function renderNav() {
       // Desktop Nav
@@ -363,6 +381,7 @@
     function getToolsHTML() {
       const f = tripData.flights;
       const h = tripData.hotel;
+      const savedKey = localStorage.getItem('gemini_api_key') || '';
       
       const emergencyHTML = tripData.emergency.map(item => `
         <div class="flex flex-col bg-white dark:bg-stone-800/80 p-4 md:p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -422,6 +441,23 @@
             <section class="bg-red-50 dark:bg-red-900/10 rounded-3xl p-6 border border-red-100 dark:border-red-900/30 md:col-span-2 mt-2">
               <h3 class="flex items-center text-lg md:text-xl font-bold text-red-700 dark:text-red-400 mb-5"><i data-lucide="alert-circle" class="w-5 h-5 md:w-6 md:h-6 mr-2"></i> 緊急聯絡電話</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${emergencyHTML}</div>
+            </section>
+
+            <!-- 🛑 安全升級：將 API Key 的設定放在 UI 介面中，不寫死在程式碼裡 -->
+            <section class="bg-blue-50 dark:bg-blue-900/10 rounded-3xl p-6 border border-blue-100 dark:border-blue-900/30 md:col-span-2 mt-2">
+              <h3 class="flex items-center text-lg md:text-xl font-bold text-blue-800 dark:text-blue-400 mb-2">
+                <i data-lucide="key" class="w-5 h-5 md:w-6 md:h-6 mr-2"></i> ⚙️ AI 搜尋金鑰設定
+              </h3>
+              <p class="text-sm md:text-base text-blue-600 dark:text-blue-300 mb-4 leading-relaxed">
+                為了避免金鑰在 GitHub 上洩漏被盜用，請將您申請好的 Gemini API Key 填寫在這裡。它只會安全地保存在您的本地瀏覽器中！
+              </p>
+              <div class="flex space-x-2">
+                <input type="password" id="api-key-setting" placeholder="填入 API Key (如 AIzaSy...)" value="${savedKey}" class="flex-1 px-4 py-2.5 bg-white dark:bg-stone-900 border border-blue-200 dark:border-blue-800 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-300 dark:text-stone-200" />
+                <button onclick="saveApiKey()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors shrink-0">
+                  儲存
+                </button>
+              </div>
+              <div id="api-key-msg" class="text-sm mt-3 font-bold hidden"></div>
             </section>
 
           </div>
@@ -523,6 +559,14 @@
       const val = input.value.trim();
       if (!val) return;
 
+      // 檢查是否設定了 API Key
+      const apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        aiState.error = '⚠️ 為了安全起見，請先前往「資訊」頁面最下方設定您的專屬 API Key。';
+        renderContent();
+        return;
+      }
+
       aiState.location = val;
       aiState.isSearching = true;
       aiState.error = '';
@@ -536,10 +580,6 @@
       }
 
       try {
-        // ⚠️ 請在此處填寫您的 API Key (必須保留前後的雙引號)
-        const apiKey = "AIzaSyDtkX8lMD1iJoBALE7VUBkjmU7Yrcr2ujY"; 
-        
-        // 💡 更新為目前最新的穩定版模型 gemini-2.5-flash
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
         const prompt = `使用者目前在日本東京的「${aiState.location}」，請推薦附近走路15分鐘內的：1. 正餐餐廳 (至多3個) 2. 下午茶咖啡館 (至多3個) 3. 其他景點 (至多3個)。請以 JSON 格式回傳，格式必須嚴格如下：
